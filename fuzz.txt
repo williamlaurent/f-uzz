@@ -1,4 +1,6 @@
 .git
+publickey.asc
+privatekey.asc
 .git/index
 .git/HEAD
 .git.config
