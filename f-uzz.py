@@ -1,56 +1,57 @@
-##############################
-# Fuzzing bot by laggerghost #
-##############################
-
 import requests
 from requests.exceptions import RequestException
 import os
+from colorama import Fore, Style, init
 
-def read_fuzz_file(file_path):
+# Inisialisasi colorama
+init(autoreset=True)
+
+def read_file(file_path):
     with open(file_path, 'r') as file:
-        fuzz_list = file.read().splitlines()
-    return fuzz_list
+        return file.read().splitlines()
 
-def read_url_file(file_path):
-    with open(file_path, 'r') as file:
-        url_list = file.read().splitlines()
-    return url_list
-
-def fuzz_url(url, fuzz_list):
+def fuzz_url(session, url, fuzz_list):
     results = []
     for fuzz in fuzz_list:
         full_url = f"https://{url}/{fuzz}"
         try:
-            response = requests.get(full_url)
+            response = session.get(full_url, timeout=5)  # Timeout 5 detik
+            print(f"{Fore.GREEN}[{response.status_code}] {full_url}")  # Tampilkan status dengan warna hijau
             if response.status_code == 200:
                 results.append(full_url)
-        except RequestException as e:
-            print(f"Error accessing {full_url}: {e}")
+        except requests.ConnectionError:
+            print(f"{Fore.RED}[ERROR] Connection refused: {full_url}")  # Error warna merah
+        except requests.Timeout:
+            print(f"{Fore.YELLOW}[ERROR] Timeout: {full_url}")  # Timeout warna kuning
+        except RequestException:
+            print(f"{Fore.RED}[ERROR] Failed to access: {full_url}")  # Umum error warna merah
     return results
 
 def write_results(results, file_path):
     with open(file_path, 'w') as file:
-        for result in results:
-            file.write(f"{result}\n")
+        file.write("\n".join(results))
 
 def main():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-    print("Foezz!ng b-o-t by Laggerghost")
+    print(f"{Fore.CYAN}Foezz!ng b-o-t by Laggerghost")  # Warna cyan untuk header
 
-    fuzz_list = read_fuzz_file('fuzz.txt')
+    try:
+        fuzz_list = read_file('fuzz.txt')
+        url_list = read_file('list.txt')
 
-    url_list = read_url_file('list.txt')
+        all_results = []
+        with requests.Session() as session:  # Gunakan session untuk optimasi
+            for url in url_list:
+                print(f"\n{Fore.CYAN}Fuzzing: https://{url}")  # Warna cyan untuk URL
+                results = fuzz_url(session, url, fuzz_list)
+                all_results.extend(results)
 
-    all_results = []
+        write_results(all_results, 'results.txt')
+        print(f"\n{Fore.GREEN}Fuzzing completed. Results saved to results.txt")  # Warna hijau untuk selesai
 
-    for url in url_list:
-        print(f"Fuzzing URL: https://{url}")
-        results = fuzz_url(url, fuzz_list)
-        all_results.extend(results)
-
-    write_results(all_results, 'results.txt')
-    print("Fuzzing completed. Results saved to results.txt")
+    except KeyboardInterrupt:
+        print(f"\n{Fore.MAGENTA}[!] Fuzzing aborted by user. Exiting gracefully.")  # Warna magenta untuk abort
 
 if __name__ == "__main__":
     main()
