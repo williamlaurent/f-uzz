@@ -1,4 +1,6 @@
 .git
+.well-known/assetlinks.json
+.well-known/apple-app-site-association
 publickey.asc
 privatekey.asc
 .git/index
